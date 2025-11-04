@@ -3,7 +3,8 @@
 
 #include "utils.h"
 #include "user.h"
-#include "train.h"
+
+class TrainManager; // Forward declaration
 
 enum OrderStatus {
     ORDER_SUCCESS,
@@ -44,7 +45,7 @@ public:
 
     int buyTicket(const char* username, const char* trainID, const char* date,
                   int numTickets, const char* fromStation, const char* toStation,
-                  bool queueIfUnavailable, int& totalPrice);
+                  bool queueIfUnavailable, int& totalPrice, TrainManager* trainManager);
     int queryOrder(const char* username, char* result);
     int refundTicket(const char* username, int orderIndex);
 

@@ -39,6 +39,7 @@ public:
     User* findUser(const char* username);
     bool isUserLoggedIn(const char* username);
     int getUserPrivilege(const char* username);
+    bool isFirstUserAdded() { return firstUserAdded; }
 
     void clean();
 };

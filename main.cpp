@@ -124,7 +124,14 @@ private:
         }
 
         int privilege = privilegeStr ? parseInt(privilegeStr) : 0;
-        int result = userManager.addUser(curUsername, username, password, name, mailAddr, privilege);
+
+        // For first user, ignore -c and -g parameters
+        int result;
+        if (!userManager.isFirstUserAdded()) {
+            result = userManager.addUser(nullptr, username, password, name, mailAddr, 10);
+        } else {
+            result = userManager.addUser(curUsername, username, password, name, mailAddr, privilege);
+        }
         printf("%d\n", result);
 
         freeArgs(keys, values, count);
@@ -405,7 +412,7 @@ private:
         int totalPrice;
 
         int result = orderManager.buyTicket(username, trainID, date, numTickets,
-                                           fromStation, toStation, queueIfUnavailable, totalPrice);
+                                           fromStation, toStation, queueIfUnavailable, totalPrice, &trainManager);
 
         if (result == -1) {
             printf("-1\n");

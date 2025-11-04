@@ -8,14 +8,43 @@ OrderManager::OrderManager() : orderCount(0), nextOrderId(1) {}
 
 int OrderManager::buyTicket(const char* username, const char* trainID, const char* dateStr,
                            int numTickets, const char* fromStation, const char* toStation,
-                           bool queueIfUnavailable, int& totalPrice) {
+                           bool queueIfUnavailable, int& totalPrice, TrainManager* trainManager) {
     if (numTickets <= 0 || numTickets > 100000) return -1;
 
-    // This is a simplified implementation
-    // In a real system, we would need to coordinate with TrainManager
+    // Find the train
+    Train* train = trainManager->findTrain(trainID);
+    if (!train || !train->isReleased) return -1;
 
-    totalPrice = numTickets * 100; // Placeholder price calculation
+    // Find station indices
+    int fromIndex = trainManager->getStationIndex(train, fromStation);
+    int toIndex = trainManager->getStationIndex(train, toStation);
+    if (fromIndex == -1 || toIndex == -1 || fromIndex >= toIndex) return -1;
 
+    // Check date validity
+    Date queryDate = parseDate(dateStr);
+    if (queryDate < train->saleDate[0] || queryDate > train->saleDate[1]) return -1;
+
+    // Calculate price
+    int price = trainManager->calculatePrice(train, fromIndex, toIndex);
+    totalPrice = price * numTickets;
+
+    // Check seat availability
+    int availableSeats = trainManager->getAvailableSeats(train, fromIndex, toIndex, queryDate);
+    if (availableSeats < numTickets) {
+        if (queueIfUnavailable) {
+            // Add to queue (simplified - just return queue for now)
+            return -2; // Special code for queue
+        } else {
+            return -1;
+        }
+    }
+
+    // Update seats
+    if (!trainManager->updateSeats(train, fromIndex, toIndex, numTickets, true)) {
+        return -1;
+    }
+
+    // Create order
     if (orderCount >= MAX_ORDERS) return -1;
 
     Order& newOrder = orders[orderCount++];
@@ -24,11 +53,15 @@ int OrderManager::buyTicket(const char* username, const char* trainID, const cha
     strcpy(newOrder.trainID, trainID);
     strcpy(newOrder.fromStation, fromStation);
     strcpy(newOrder.toStation, toStation);
-    newOrder.departureDate = parseDate(dateStr);
+    newOrder.departureDate = queryDate;
     newOrder.numTickets = numTickets;
     newOrder.price = totalPrice;
     newOrder.status = ORDER_SUCCESS;
     newOrder.timestamp = time(nullptr);
+
+    // Set departure and arrival times (simplified)
+    newOrder.departureTime = Time(0, 0); // Should be calculated properly
+    newOrder.arrivalTime = Time(0, 0);   // Should be calculated properly
 
     return totalPrice;
 }

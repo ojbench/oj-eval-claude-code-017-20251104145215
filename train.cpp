@@ -74,6 +74,13 @@ int TrainManager::addTrain(const char* trainID, int stationNum, int seatNum, con
             stopoverIndex++;
         }
         delete[] stopoverCopy;
+    } else if (stationNum == 2) {
+        // For trains with 2 stations, stopoverTimes should be "_"
+        if (strcmp(stopoverTimes, "_") != 0) {
+            // Invalid input for 2-station train
+            trainCount--; // Rollback
+            return -1;
+        }
     }
 
     // Parse sale dates
@@ -91,7 +98,7 @@ int TrainManager::addTrain(const char* trainID, int stationNum, int seatNum, con
 
     // Initialize seat availability
     for (int i = 0; i < stationNum - 1; i++) {
-        newTrain.totalSeats[i] = seatNum;
+        newTrain.availableSeats[i] = seatNum;
     }
 
     return 0;
@@ -172,7 +179,7 @@ int TrainManager::queryTrain(const char* trainID, const char* dateStr, char* res
             price += train->prices[j];
         }
 
-        int seats = (i < train->stationNum - 1) ? train->totalSeats[i] : 0;
+        int seats = (i < train->stationNum - 1) ? train->availableSeats[i] : 0;
 
         if (i == 0) {
             ptr += sprintf(ptr, "%s xx-xx xx:xx -> %02d-%02d %02d:%02d %d %d\n",
@@ -238,6 +245,42 @@ int TrainManager::calculatePrice(const Train* train, int fromIndex, int toIndex)
         price += train->prices[i];
     }
     return price;
+}
+
+int TrainManager::getMinAvailableSeats(Train* train, int fromIndex, int toIndex) {
+    int minSeats = train->availableSeats[fromIndex];
+    for (int i = fromIndex + 1; i < toIndex; i++) {
+        if (train->availableSeats[i] < minSeats) {
+            minSeats = train->availableSeats[i];
+        }
+    }
+    return minSeats;
+}
+
+int TrainManager::getAvailableSeats(Train* train, int fromIndex, int toIndex, const Date& date) {
+    // Check if date is within sale range
+    if (date < train->saleDate[0] || date > train->saleDate[1]) return 0;
+
+    return getMinAvailableSeats(train, fromIndex, toIndex);
+}
+
+bool TrainManager::updateSeats(Train* train, int fromIndex, int toIndex, int numTickets, bool buy) {
+    if (buy) {
+        // Check if enough seats are available
+        int minSeats = getMinAvailableSeats(train, fromIndex, toIndex);
+        if (minSeats < numTickets) return false;
+
+        // Reduce available seats
+        for (int i = fromIndex; i < toIndex; i++) {
+            train->availableSeats[i] -= numTickets;
+        }
+    } else {
+        // Refund - increase available seats
+        for (int i = fromIndex; i < toIndex; i++) {
+            train->availableSeats[i] += numTickets;
+        }
+    }
+    return true;
 }
 
 int TrainManager::queryTicket(const char* fromStation, const char* toStation, const char* dateStr,

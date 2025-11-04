@@ -15,14 +15,14 @@ struct Train {
     Date saleDate[2];                 // start and end sale dates
     char type;
     bool isReleased;
-    int totalSeats[MAX_STATIONS - 1]; // available seats between stations
+    int availableSeats[MAX_STATIONS - 1]; // available seats between stations for each day
 
     Train() : stationNum(0), seatNum(0), type(' '), isReleased(false) {
         trainID[0] = '\0';
         for (int i = 0; i < MAX_STATIONS - 1; i++) {
             prices[i] = 0;
             travelTimes[i] = 0;
-            totalSeats[i] = 0;
+            availableSeats[i] = 0;
         }
         for (int i = 0; i < MAX_STATIONS - 2; i++) {
             stopoverTimes[i] = 0;
@@ -67,6 +67,7 @@ public:
     Time calculateArrivalTime(const Train* train, int stationIndex, const Date& departureDate);
     int getAvailableSeats(Train* train, int fromIndex, int toIndex, const Date& date);
     bool updateSeats(Train* train, int fromIndex, int toIndex, int numTickets, bool buy);
+    int getMinAvailableSeats(Train* train, int fromIndex, int toIndex);
 
     void clean();
 };
